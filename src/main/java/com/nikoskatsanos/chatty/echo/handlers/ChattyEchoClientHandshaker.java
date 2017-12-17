@@ -11,6 +11,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.CountDownLatch;
 
 /**
+ * <p>{@link io.netty.channel.SimpleChannelInboundHandler} which performs a websocket handshake with the server</p>
+ *
  * @author nikkatsa
  */
 public class ChattyEchoClientHandshaker extends SimpleChannelInboundHandler<Object> {

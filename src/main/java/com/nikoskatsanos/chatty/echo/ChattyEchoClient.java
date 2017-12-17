@@ -36,6 +36,10 @@ import java.net.URI;
 import java.util.Scanner;
 
 /**
+ * <p>Command line client that interacts with <em>Chatty Echo Server</em>. This class contains a main method where the user can send {@link
+ * com.nikoskatsanos.chatty.echo.model.ChattyEchoInboundMessage}s to the server. </p> <p>At startup the user needs to provide the port {@code --port ${PORT}} as
+ * a command line argument</p>
+ *
  * @author nikkatsa
  */
 public class ChattyEchoClient {
@@ -115,7 +119,7 @@ public class ChattyEchoClient {
             log.warn("Closing client");
             chattyEchoClientChannel.close().sync();
             nioLoop.shutdownGracefully();
-        } catch (ParseException e) {
+        } catch (final ParseException e) {
             log.fatal(e.getMessage(), e);
             throw new RuntimeException(printUsage(), e);
         } catch (final InterruptedException e) {

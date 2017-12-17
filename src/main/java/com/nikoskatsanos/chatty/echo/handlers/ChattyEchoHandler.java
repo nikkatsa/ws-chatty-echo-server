@@ -16,18 +16,21 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * <p>{@link io.netty.channel.SimpleChannelInboundHandler} which reads an incoming {@link com.nikoskatsanos.chatty.echo.model.ChattyEchoInboundMessage} and
+ * based on its properties it sends out the appropriate {@link com.nikoskatsanos.chatty.echo.model.ChattyEchoOutboundMessage}</p>
+ *
  * @author nikkatsa
  */
 public class ChattyEchoHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
     private static final Logger log = LogManager.getFormatterLogger(ChattyEchoHandler.class);
 
-    private static final ObjectMapper mapper;
+    private static final ObjectMapper JSON_MAPPER;
 
     private final ScheduledExecutorService echoBackExecutors;
 
     static {
-        mapper = new ObjectMapper();
+        JSON_MAPPER = new ObjectMapper();
     }
 
     public ChattyEchoHandler() {
@@ -38,7 +41,7 @@ public class ChattyEchoHandler extends SimpleChannelInboundHandler<TextWebSocket
         final String payload = textWebSocketFrame.text();
 
         try {
-            final ChattyEchoInboundMessage chattyEchoInboundMessage = mapper.readValue(payload, ChattyEchoInboundMessage.class);
+            final ChattyEchoInboundMessage chattyEchoInboundMessage = JSON_MAPPER.readValue(payload, ChattyEchoInboundMessage.class);
 
             final int times = chattyEchoInboundMessage.getTimes() > 0 ? chattyEchoInboundMessage.getTimes() : 1;
             final long delay = chattyEchoInboundMessage.getDelay() >= 0 ? chattyEchoInboundMessage.getDelay() : 0;
@@ -48,7 +51,7 @@ public class ChattyEchoHandler extends SimpleChannelInboundHandler<TextWebSocket
                 this.echoBackExecutors.schedule(() -> {
                     log.info(">> [%s (%s)]", chattyEchoOutboundMessage.getMsg(), channelHandlerContext.channel().remoteAddress().toString());
                     try {
-                        channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(mapper.writeValueAsString(chattyEchoOutboundMessage)));
+                        channelHandlerContext.channel().writeAndFlush(new TextWebSocketFrame(JSON_MAPPER.writeValueAsString(chattyEchoOutboundMessage)));
                     } catch (final JsonProcessingException e) {
                         log.error(e.getMessage(), e);
                     }

@@ -46,26 +46,29 @@ public class ChattyEchoServer {
                 throw new ParseException("Port is a required command line argument. Please see usage");
             }
 
+            final int port = Integer.parseInt(cli.getOptionValue('p'));
+
             final NioEventLoopGroup mainLoop = new NioEventLoopGroup(1, new NamedThreadFactory("NIO-EventLoop", true));
-            final NioEventLoopGroup executors = new NioEventLoopGroup(1, new NamedThreadFactory("NIO-Executor", true));
+            final NioEventLoopGroup executors = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors() / 2, new NamedThreadFactory("NIO-Executor",
+                    true));
             try {
                 final ServerBootstrap chattyEchoServer = new ServerBootstrap().group(mainLoop, executors).channel(NioServerSocketChannel.class).childHandler
                         (new ChannelInitializer<SocketChannel>() {
                     protected void initChannel(final SocketChannel socketChannel) throws Exception {
                         final ChannelPipeline pipeline = socketChannel.pipeline();
                         pipeline.addLast(new HttpServerCodec());
-                        pipeline.addLast(new HttpObjectAggregator(65536));
+                        pipeline.addLast(new HttpObjectAggregator(65_536));
                         pipeline.addLast(new WebSocketServerCompressionHandler());
                         pipeline.addLast(new WebSocketServerProtocolHandler("/echo", null, true));
                         pipeline.addLast(new ChattyEchoHandler());
                     }
                 });
 
-                final Channel serverChannel = chattyEchoServer.bind(10_000).sync().channel();
+                final Channel serverChannel = chattyEchoServer.bind(port).sync().channel();
 
                 log.info("Chatty Echo Server started at [%s]", serverChannel.localAddress().toString());
                 serverChannel.closeFuture().sync();
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 log.warn(e.getMessage(), e);
             } finally {
                 executors.shutdownGracefully();
@@ -81,8 +84,12 @@ public class ChattyEchoServer {
         final StringWriter sw = new StringWriter(128);
         final HelpFormatter helpFormatter = new HelpFormatter();
         final PrintWriter pw = new PrintWriter(sw);
-        helpFormatter.printUsage(pw, 100, "Chatty Echo Server", CLI_OPTIONS);
-        pw.flush();
+        try {
+            helpFormatter.printUsage(pw, 100, "Chatty Echo Server", CLI_OPTIONS);
+        } finally {
+            pw.flush();
+            pw.close();
+        }
         return sw.toString();
     }
 }
